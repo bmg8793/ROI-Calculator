@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Teacher Salary Lane ROI Calculator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --b4c-navy: #1a3a5c;
+    --b4c-teal: #2ba99b;
+    --b4c-coral: #e87461;
+    --b4c-cream: #faf6f0;
+    --b4c-dark: #0e1f33;
+    --b4c-gray: #6b7785;
+    --b4c-light: #f0f2f5;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    background: var(--b4c-cream);
+    color: var(--b4c-dark);
+    line-height: 1.5;
+  }
+  .wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 24px 64px;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  h1 {
+    font-size: 32px;
+    margin: 0 0 8px;
+    color: var(--b4c-navy);
+    font-weight: 700;
+  }
+  .subtitle {
+    color: var(--b4c-gray);
+    font-size: 16px;
+    margin: 0;
+  }
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 28px;
+    box-shadow: 0 2px 12px rgba(26,58,92,0.08);
+    margin-bottom: 24px;
+  }
+  .card h2 {
+    margin: 0 0 20px;
+    font-size: 18px;
+    color: var(--b4c-navy);
+    font-weight: 600;
+  }
+  .input-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--b4c-gray);
+    margin-bottom: 6px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  select, input[type="number"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid #d8dde3;
+    border-radius: 8px;
+    font-size: 15px;
+    background: white;
+    color: var(--b4c-dark);
+    font-family: inherit;
+  }
+  select:focus, input:focus {
+    outline: none;
+    border-color: var(--b4c-teal);
+  }
+  .results {
+    background: linear-gradient(135deg, var(--b4c-navy) 0%, #2a5783 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+  }
+  .results h2 {
+    color: white;
+    margin: 0 0 24px;
+    font-size: 18px;
+    opacity: 0.85;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+  }
+  .metric {
+    background: rgba(255,255,255,0.08);
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 3px solid var(--b4c-teal);
+  }
+  .metric.highlight {
+    border-left-color: var(--b4c-coral);
+    background: rgba(232,116,97,0.15);
+  }
+  .metric-label {
+    font-size: 12px;
+    opacity: 0.7;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .metric-value {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .metric-sub {
+    font-size: 13px;
+    opacity: 0.7;
+    margin-top: 4px;
+  }
+  .breakdown {
+    background: white;
+    border-radius: 12px;
+    padding: 24px 28px;
+    box-shadow: 0 2px 12px rgba(26,58,92,0.08);
+  }
+  .breakdown h2 {
+    margin: 0 0 16px;
+    font-size: 16px;
+    color: var(--b4c-navy);
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--b4c-light);
+    font-size: 14px;
+  }
+  .row:last-child { border-bottom: none; }
+  .row .label { color: var(--b4c-gray); }
+  .row .value { font-weight: 600; color: var(--b4c-dark); }
+  .footnote {
+    font-size: 12px;
+    color: var(--b4c-gray);
+    margin-top: 16px;
+    padding: 12px;
+    background: var(--b4c-light);
+    border-radius: 6px;
+  }
+  .warning {
+    background: #fff3cd;
+    border-left: 3px solid #f0ad4e;
+    padding: 12px 16px;
+    border-radius: 6px;
+    color: #856404;
+    font-size: 14px;
+    margin-top: 16px;
+  }
+  .program-cost {
+    text-align: center;
+    margin-top: 24px;
+    padding: 16px;
+    background: white;
+    border: 2px dashed var(--b4c-teal);
+    border-radius: 8px;
+  }
+  .program-cost .label {
+    font-size: 12px;
+    color: var(--b4c-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .program-cost .value {
+    font-size: 22px;
+    color: var(--b4c-navy);
+    font-weight: 700;
+    margin-top: 4px;
+  }
+  @media (max-width: 600px) {
+    h1 { font-size: 24px; }
+    .metric-value { font-size: 22px; }
+    .card, .results { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Your Master's Degree ROI</h1>
+    <p class="subtitle">See what a salary lane change is worth over your career</p>
+  </header>
+
+  <div class="card">
+    <h2>Your situation</h2>
+    <div class="input-grid">
+      <div>
+        <label for="state">State</label>
+        <select id="state"></select>
+      </div>
+      <div>
+        <label for="currentLane">Current pay lane</label>
+        <select id="currentLane">
+          <option value="startingBA">Starting Bachelor's</option>
+          <option value="topBA">Top of Bachelor's</option>
+        </select>
+      </div>
+      <div>
+        <label for="targetLane">Target pay lane</label>
+        <select id="targetLane">
+          <option value="startingMA">Starting Master's</option>
+          <option value="topMA" selected>Top of Master's</option>
+        </select>
+      </div>
+      <div>
+        <label for="yearsLeft">Years left in teaching</label>
+        <input type="number" id="yearsLeft" min="1" max="40" value="20">
+      </div>
+    </div>
+  </div>
+
+  <div class="results">
+    <h2>What this means for you</h2>
+    <div class="metrics">
+      <div class="metric">
+        <div class="metric-label">Annual raise</div>
+        <div class="metric-value" id="annualRaise">—</div>
+        <div class="metric-sub">in additional yearly income</div>
+      </div>
+      <div class="metric highlight">
+        <div class="metric-label">Lifetime earnings gain</div>
+        <div class="metric-value" id="lifetimeGain">—</div>
+        <div class="metric-sub" id="lifetimeYears">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Payback period</div>
+        <div class="metric-value" id="payback">—</div>
+        <div class="metric-sub">to recover $14,790 tuition</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Cost of waiting 1 year</div>
+        <div class="metric-value" id="costOfWaiting">—</div>
+        <div class="metric-sub">forgone in year one alone</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="breakdown">
+    <h2>How we got there</h2>
+    <div class="row"><span class="label">Your state</span><span class="value" id="stateLabel">—</span></div>
+    <div class="row"><span class="label">Current salary (your lane)</span><span class="value" id="currentSalary">—</span></div>
+    <div class="row"><span class="label">Target salary (new lane)</span><span class="value" id="targetSalary">—</span></div>
+    <div class="row"><span class="label">Annual difference</span><span class="value" id="annualDiff">—</span></div>
+    <div class="row"><span class="label">Years of impact</span><span class="value" id="yearsLabel">—</span></div>
+
+    <div class="program-cost">
+      <div class="label">B4C × William Jewell College Master's program cost</div>
+      <div class="value">$14,790</div>
+    </div>
+
+    <div class="footnote">
+      Source: National Education Association (NEA), Teacher Salary Benchmark Report 2025. Figures are state averages — your district may pay more or less. Salary lane advancement requirements vary by district.
+    </div>
+    <div class="warning" id="dataWarning" style="display:none;"></div>
+  </div>
+</div>
+
+<script>
+// NEA 2025 data
+const data = {
+  "Alabama":      {sBA:44610,tBA:68271,sMA:53441,tMA:78465,top:90667},
+  "Alaska":       {sBA:52451,tBA:67738,sMA:57575,tMA:81947,top:93520},
+  "Arizona":      {sBA:46128,tBA:60178,sMA:48865,tMA:69603,top:77276},
+  "Arkansas":     {sBA:50031,tBA:null,sMA:50352,tMA:null,top:56354},
+  "California":   {sBA:58409,tBA:null,sMA:null,tMA:null,top:115531},
+  "Colorado":     {sBA:42421,tBA:54809,sMA:46339,tMA:66758,top:75994},
+  "Connecticut":  {sBA:49860,tBA:null,sMA:54110,tMA:94562,top:100769},
+  "Delaware":     {sBA:48407,tBA:67814,sMA:54875,tMA:85255,top:94679},
+  "District of Columbia": {sBA:63373,tBA:100488,sMA:67598,tMA:123994,top:131003},
+  "Florida":      {sBA:48639,tBA:66972,sMA:51424,tMA:69076,top:72598},
+  "Georgia":      {sBA:43654,tBA:62692,sMA:48966,tMA:70930,top:86727},
+  "Hawaii":       {sBA:51835,tBA:73843,sMA:55982,tMA:79750,top:95090},
+  "Idaho":        {sBA:45717,tBA:61688,sMA:50142,tMA:68383,top:70815},
+  "Illinois":     {sBA:45061,tBA:66456,sMA:49409,tMA:81986,top:90761},
+  "Indiana":      {sBA:45007,tBA:null,sMA:null,tMA:null,top:78362},
+  "Iowa":         {sBA:40997,tBA:null,sMA:null,tMA:null,top:76497},
+  "Kansas":       {sBA:42800,tBA:48210,sMA:45923,tMA:59334,top:66174},
+  "Kentucky":     {sBA:40161,tBA:57750,sMA:44113,tMA:62919,top:68076},
+  "Louisiana":    {sBA:46682,tBA:59151,sMA:47507,tMA:61015,top:63316},
+  "Maine":        {sBA:42380,tBA:69151,sMA:45213,tMA:73056,top:75694},
+  "Maryland":     {sBA:54439,tBA:73140,sMA:56762,tMA:95081,top:104034},
+  "Massachusetts":{sBA:52616,tBA:83162,sMA:56848,tMA:91802,top:102453},
+  "Michigan":     {sBA:41645,tBA:null,sMA:null,tMA:77139,top:null},
+  "Minnesota":    {sBA:44995,tBA:60944,sMA:50676,tMA:73308,top:79020},
+  "Mississippi":  {sBA:42492,tBA:62136,sMA:44034,tMA:67657,top:72955},
+  "Missouri":     {sBA:38871,tBA:47360,sMA:40492,tMA:57077,top:61893},
+  "Montana":      {sBA:35674,tBA:48901,sMA:40159,tMA:66361,top:71199},
+  "Nebraska":     {sBA:38811,tBA:47698,sMA:45798,tMA:65507,top:73721},
+  "Nevada":       {sBA:47355,tBA:61320,sMA:53256,tMA:79655,top:91248},
+  "New Hampshire":{sBA:42588,tBA:63602,sMA:46586,tMA:71555,top:75521},
+  "New Jersey":   {sBA:57603,tBA:89187,sMA:61537,tMA:94101,top:98007},
+  "New Mexico":   {sBA:53400,tBA:70383,sMA:62797,tMA:80700,top:81788},
+  "New York":     {sBA:50077,tBA:82249,sMA:54921,tMA:94025,top:100817},
+  "North Carolina":{sBA:42542,tBA:60104,sMA:46796,tMA:66114,top:68874},
+  "North Dakota": {sBA:43734,tBA:null,sMA:null,tMA:null,top:null},
+  "Ohio":         {sBA:40982,tBA:71518,sMA:45336,tMA:83704,top:89121},
+  "Oklahoma":     {sBA:41152,tBA:59307,sMA:42588,tMA:61370,top:63691},
+  "Oregon":       {sBA:44446,tBA:63467,sMA:49551,tMA:77825,top:84244},
+  "Pennsylvania": {sBA:50470,tBA:76537,sMA:54703,tMA:84160,top:90059},
+  "Rhode Island": {sBA:47205,tBA:90091,sMA:50447,tMA:93626,top:95953},
+  "South Carolina":{sBA:44693,tBA:50059,sMA:64426,tMA:72092,top:86420},
+  "South Dakota": {sBA:45530,tBA:60066,sMA:50594,tMA:62708,top:null},
+  "Tennessee":    {sBA:44897,tBA:59505,sMA:48561,tMA:64688,top:73325},
+  "Texas":        {sBA:48526,tBA:66547,sMA:51463,tMA:68911,top:67762},
+  "Utah":         {sBA:55711,tBA:79448,sMA:60097,tMA:91810,top:96253},
+  "Vermont":      {sBA:44524,tBA:62874,sMA:49677,tMA:75829,top:83042},
+  "Virginia":     {sBA:48666,tBA:76088,sMA:51805,tMA:80011,top:82037},
+  "Washington":   {sBA:57912,tBA:69398,sMA:68289,tMA:100649,top:111826},
+  "West Virginia":{sBA:42708,tBA:63879,sMA:45544,tMA:66740,top:70587},
+  "Wisconsin":    {sBA:42259,tBA:null,sMA:null,tMA:null,top:80642},
+  "Wyoming":      {sBA:50214,tBA:59780,sMA:54882,tMA:71427,top:78709},
+  // National fallback
+  "National Average": {sBA:46526,tBA:66532,sMA:50380,tMA:76905,top:84272}
+};
+
+const laneMap = {startingBA:"sBA", topBA:"tBA", startingMA:"sMA", topMA:"tMA"};
+const laneLabel = {startingBA:"Starting Bachelor's", topBA:"Top of Bachelor's", startingMA:"Starting Master's", topMA:"Top of Master's"};
+
+const PROGRAM_COST = 14790;
+
+const fmt = n => n == null ? "—" : "$" + Math.round(n).toLocaleString();
+const fmtYears = n => {
+  if (n == null) return "—";
+  if (n < 1) return Math.round(n*12) + " months";
+  return n.toFixed(1) + " years";
+};
+
+function init() {
+  const stateSelect = document.getElementById("state");
+  Object.keys(data).sort().forEach(s => {
+    const o = document.createElement("option");
+    o.value = s;
+    o.textContent = s;
+    if (s === "California") o.selected = true;
+    stateSelect.appendChild(o);
+  });
+  ["state","currentLane","targetLane","yearsLeft"].forEach(id => {
+    document.getElementById(id).addEventListener("input", calc);
+    document.getElementById(id).addEventListener("change", calc);
+  });
+  calc();
+}
+
+function calc() {
+  const state = document.getElementById("state").value;
+  const currentLane = document.getElementById("currentLane").value;
+  const targetLane = document.getElementById("targetLane").value;
+  const yearsLeft = parseInt(document.getElementById("yearsLeft").value) || 1;
+
+  let stateData = data[state];
+  let usingFallback = false;
+  let currentVal = stateData[laneMap[currentLane]];
+  let targetVal = stateData[laneMap[targetLane]];
+
+  // Fallback to national average if state data missing
+  const fallback = data["National Average"];
+  if (currentVal == null) { currentVal = fallback[laneMap[currentLane]]; usingFallback = true; }
+  if (targetVal == null) { targetVal = fallback[laneMap[targetLane]]; usingFallback = true; }
+
+  const annualDiff = targetVal - currentVal;
+  const lifetimeGain = annualDiff * yearsLeft;
+  const payback = annualDiff > 0 ? PROGRAM_COST / annualDiff : null;
+  const costOfWaiting = annualDiff;
+
+  document.getElementById("annualRaise").textContent = fmt(annualDiff);
+  document.getElementById("lifetimeGain").textContent = fmt(lifetimeGain);
+  document.getElementById("lifetimeYears").textContent = "over " + yearsLeft + " years";
+  document.getElementById("payback").textContent = fmtYears(payback);
+  document.getElementById("costOfWaiting").textContent = fmt(costOfWaiting);
+
+  document.getElementById("stateLabel").textContent = state;
+  document.getElementById("currentSalary").textContent = fmt(currentVal) + " (" + laneLabel[currentLane] + ")";
+  document.getElementById("targetSalary").textContent = fmt(targetVal) + " (" + laneLabel[targetLane] + ")";
+  document.getElementById("annualDiff").textContent = fmt(annualDiff) + " / year";
+  document.getElementById("yearsLabel").textContent = yearsLeft + " years";
+
+  const warning = document.getElementById("dataWarning");
+  if (usingFallback) {
+    warning.style.display = "block";
+    warning.textContent = "Note: " + state + " doesn't publish complete NEA data for one or both of these lanes. National averages are used where state figures are missing.";
+  } else {
+    warning.style.display = "none";
+  }
+}
+
+init();
+</script>
+</body>
+</html>
