@@ -2,24 +2,47 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Teacher Salary Lane ROI Calculator</title>
+<title>Teacher Salary Lane ROI Calculator | Breathe for Change × William Jewell</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="See what a Master's degree could mean for your career — state-specific salary lane ROI calculator from Breathe for Change.">
 <style>
+  /* ============================================
+     B4C BRAND COLORS (from Brand Guidelines v1.0, Jan 2026)
+     ============================================ */
   :root {
-    --b4c-navy: #1a3a5c;
-    --b4c-teal: #2ba99b;
-    --b4c-coral: #e87461;
-    --b4c-cream: #faf6f0;
-    --b4c-dark: #0e1f33;
+    /* Primary palette */
+    --b4c-indigo: #2F0155;       /* Cosmic Indigo — primary deep brand color */
+    --b4c-purple: #9534F8;       /* Radiant Purple — primary accent */
+    --b4c-cta-purple: #B063FF;   /* CTA Purple — call-to-action */
+    --b4c-deep: #111111;         /* Deep Neutral — primary text */
+    --b4c-ivory: #F0EFED;        /* Soft Ivory — primary background */
+
+    /* Secondary palette */
+    --b4c-jade: #35C791;         /* Fresh Jade — positive accent */
+    --b4c-coral: #EF8471;        /* Soft Coral — warm accent */
+    --b4c-azure: #0F8DFF;        /* Electric Azure — info accent */
+    --b4c-peach: #FED681;        /* Golden Peach */
+    --b4c-lavender: #FCB8FA;     /* Pink Lavender */
+
+    /* Tints (lighter versions for backgrounds) */
+    --b4c-jade-tint: #EBF9F4;
+    --b4c-coral-tint: #FDF3F1;
+    --b4c-azure-tint: #E7F4FF;
+    --b4c-peach-tint: #FFF6EF;
+
+    /* Utility */
     --b4c-gray: #6b7785;
-    --b4c-light: #f0f2f5;
+    --b4c-light: #F0EFED;
+    --b4c-warning-bg: #FFF6EF;
+    --b4c-warning-border: #EF8471;
+    --b4c-warning-text: #7a3b30;
   }
   * { box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     margin: 0;
-    background: var(--b4c-cream);
-    color: var(--b4c-dark);
+    background: var(--b4c-ivory);
+    color: var(--b4c-deep);
     line-height: 1.5;
   }
   .wrap {
@@ -34,7 +57,7 @@
   h1 {
     font-size: 32px;
     margin: 0 0 8px;
-    color: var(--b4c-navy);
+    color: var(--b4c-indigo);
     font-weight: 700;
   }
   .subtitle {
@@ -46,13 +69,13 @@
     background: white;
     border-radius: 12px;
     padding: 28px;
-    box-shadow: 0 2px 12px rgba(26,58,92,0.08);
+    box-shadow: 0 2px 12px rgba(47,1,85,0.08);
     margin-bottom: 24px;
   }
-  .card h2 {
+  .card h2, .results h2, .roi-section h2, .breakdown h2 {
     margin: 0 0 20px;
     font-size: 18px;
-    color: var(--b4c-navy);
+    color: var(--b4c-indigo);
     font-weight: 600;
   }
   .input-grid {
@@ -72,19 +95,21 @@
   select, input[type="number"] {
     width: 100%;
     padding: 12px 14px;
-    border: 1.5px solid #d8dde3;
+    border: 1.5px solid #d4d0cd;
     border-radius: 8px;
     font-size: 15px;
     background: white;
-    color: var(--b4c-dark);
+    color: var(--b4c-deep);
     font-family: inherit;
   }
   select:focus, input:focus {
     outline: none;
-    border-color: var(--b4c-teal);
+    border-color: var(--b4c-jade);
   }
+
+  /* Results — top metrics */
   .results {
-    background: linear-gradient(135deg, var(--b4c-navy) 0%, #2a5783 100%);
+    background: linear-gradient(135deg, var(--b4c-indigo) 0%, var(--b4c-purple) 100%);
     color: white;
     border-radius: 12px;
     padding: 32px;
@@ -108,11 +133,15 @@
     background: rgba(255,255,255,0.08);
     padding: 20px;
     border-radius: 8px;
-    border-left: 3px solid var(--b4c-teal);
+    border-left: 3px solid var(--b4c-jade);
   }
   .metric.highlight {
     border-left-color: var(--b4c-coral);
     background: rgba(232,116,97,0.15);
+  }
+  .metric.negative {
+    border-left-color: var(--b4c-peach);
+    background: rgba(254,214,129,0.15);
   }
   .metric-label {
     font-size: 12px;
@@ -131,16 +160,70 @@
     opacity: 0.7;
     margin-top: 4px;
   }
+
+  /* Warning callout for negative projected diff */
+  .warning {
+    background: var(--b4c-warning-bg);
+    border-left: 4px solid var(--b4c-warning-border);
+    padding: 16px 20px;
+    border-radius: 8px;
+    color: var(--b4c-warning-text);
+    font-size: 14px;
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+  .warning strong {
+    color: var(--b4c-warning-text);
+  }
+
+  /* Projected ROI section */
+  .roi-section {
+    background: white;
+    border-radius: 12px;
+    padding: 28px;
+    box-shadow: 0 2px 12px rgba(47,1,85,0.08);
+    margin-bottom: 24px;
+    border-top: 4px solid var(--b4c-jade);
+  }
+  .roi-rows {
+    margin-top: 8px;
+  }
+  .roi-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--b4c-light);
+    font-size: 15px;
+  }
+  .roi-row.subtract { color: var(--b4c-gray); }
+  .roi-row.total {
+    background: var(--b4c-ivory);
+    margin: 12px -16px 0;
+    padding: 20px 16px;
+    border-radius: 8px;
+    border-bottom: none;
+    font-size: 18px;
+  }
+  .roi-row .label { font-weight: 500; }
+  .roi-row .value { font-weight: 700; color: var(--b4c-deep); font-variant-numeric: tabular-nums; }
+  .roi-row.subtract .value { color: var(--b4c-coral); }
+  .roi-row.total .label { color: var(--b4c-indigo); font-weight: 700; }
+  .roi-row.total .value { color: var(--b4c-jade); font-size: 26px; }
+  .roi-row.total .value.negative { color: var(--b4c-coral); }
+  .roi-context {
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--b4c-gray);
+    text-align: center;
+  }
+
+  /* Breakdown */
   .breakdown {
     background: white;
     border-radius: 12px;
     padding: 24px 28px;
-    box-shadow: 0 2px 12px rgba(26,58,92,0.08);
-  }
-  .breakdown h2 {
-    margin: 0 0 16px;
-    font-size: 16px;
-    color: var(--b4c-navy);
+    box-shadow: 0 2px 12px rgba(47,1,85,0.08);
   }
   .row {
     display: flex;
@@ -149,9 +232,9 @@
     border-bottom: 1px solid var(--b4c-light);
     font-size: 14px;
   }
-  .row:last-child { border-bottom: none; }
+  .row:last-of-type { border-bottom: none; }
   .row .label { color: var(--b4c-gray); }
-  .row .value { font-weight: 600; color: var(--b4c-dark); }
+  .row .value { font-weight: 600; color: var(--b4c-deep); font-variant-numeric: tabular-nums; }
   .footnote {
     font-size: 12px;
     color: var(--b4c-gray);
@@ -159,22 +242,14 @@
     padding: 12px;
     background: var(--b4c-light);
     border-radius: 6px;
-  }
-  .warning {
-    background: #fff3cd;
-    border-left: 3px solid #f0ad4e;
-    padding: 12px 16px;
-    border-radius: 6px;
-    color: #856404;
-    font-size: 14px;
-    margin-top: 16px;
+    line-height: 1.5;
   }
   .program-cost {
     text-align: center;
-    margin-top: 24px;
+    margin-top: 20px;
     padding: 16px;
     background: white;
-    border: 2px dashed var(--b4c-teal);
+    border: 2px dashed var(--b4c-jade);
     border-radius: 8px;
   }
   .program-cost .label {
@@ -185,14 +260,25 @@
   }
   .program-cost .value {
     font-size: 22px;
-    color: var(--b4c-navy);
+    color: var(--b4c-indigo);
     font-weight: 700;
     margin-top: 4px;
+  }
+  .data-warning {
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: var(--b4c-azure-tint);
+    border-left: 3px solid var(--b4c-azure);
+    border-radius: 6px;
+    color: #0d4a8a;
+    font-size: 13px;
   }
   @media (max-width: 600px) {
     h1 { font-size: 24px; }
     .metric-value { font-size: 22px; }
-    .card, .results { padding: 20px; }
+    .card, .results, .roi-section, .breakdown { padding: 20px; }
+    .roi-row { font-size: 14px; }
+    .roi-row.total .value { font-size: 22px; }
   }
 </style>
 </head>
@@ -200,7 +286,7 @@
 <div class="wrap">
   <header>
     <h1>Your Master's Degree ROI</h1>
-    <p class="subtitle">See what a salary lane change is worth over your career</p>
+    <p class="subtitle">See what a salary lane change could mean for your career</p>
   </header>
 
   <div class="card">
@@ -215,6 +301,7 @@
         <select id="currentLane">
           <option value="startingBA">Starting Bachelor's</option>
           <option value="topBA">Top of Bachelor's</option>
+          <option value="startingMA">Starting Master's</option>
         </select>
       </div>
       <div>
@@ -232,12 +319,12 @@
   </div>
 
   <div class="results">
-    <h2>What this means for you</h2>
+    <h2>What this can mean for your career</h2>
     <div class="metrics">
-      <div class="metric">
-        <div class="metric-label">Annual raise</div>
+      <div class="metric" id="m1">
+        <div class="metric-label">Projected difference</div>
         <div class="metric-value" id="annualRaise">—</div>
-        <div class="metric-sub">in additional yearly income</div>
+        <div class="metric-sub">in year-1 annual income</div>
       </div>
       <div class="metric highlight">
         <div class="metric-label">Lifetime earnings gain</div>
@@ -252,9 +339,30 @@
       <div class="metric">
         <div class="metric-label">Cost of waiting 1 year</div>
         <div class="metric-value" id="costOfWaiting">—</div>
-        <div class="metric-sub">forgone in year one alone</div>
+        <div class="metric-sub">in forgone peak earnings</div>
       </div>
     </div>
+  </div>
+
+  <div class="warning" id="negativeWarning" style="display:none;"></div>
+
+  <div class="roi-section">
+    <h2>Your projected ROI</h2>
+    <div class="roi-rows">
+      <div class="roi-row">
+        <span class="label">Lifetime earnings gain</span>
+        <span class="value" id="roiGain">—</span>
+      </div>
+      <div class="roi-row subtract">
+        <span class="label">− Program cost (tuition)</span>
+        <span class="value">−$14,790</span>
+      </div>
+      <div class="roi-row total">
+        <span class="label">Net projected ROI</span>
+        <span class="value" id="roiNet">—</span>
+      </div>
+    </div>
+    <div class="roi-context" id="roiContext">—</div>
   </div>
 
   <div class="breakdown">
@@ -262,8 +370,9 @@
     <div class="row"><span class="label">Your state</span><span class="value" id="stateLabel">—</span></div>
     <div class="row"><span class="label">Current salary (your lane)</span><span class="value" id="currentSalary">—</span></div>
     <div class="row"><span class="label">Target salary (new lane)</span><span class="value" id="targetSalary">—</span></div>
-    <div class="row"><span class="label">Annual difference</span><span class="value" id="annualDiff">—</span></div>
-    <div class="row"><span class="label">Years of impact</span><span class="value" id="yearsLabel">—</span></div>
+    <div class="row"><span class="label">Top of Master's salary (your ceiling)</span><span class="value" id="topMASalary">—</span></div>
+    <div class="row"><span class="label">Projected difference / year</span><span class="value" id="annualDiff">—</span></div>
+    <div class="row"><span class="label">Years of projected return</span><span class="value" id="yearsLabel">—</span></div>
 
     <div class="program-cost">
       <div class="label">B4C × William Jewell College Master's program cost</div>
@@ -271,14 +380,18 @@
     </div>
 
     <div class="footnote">
-      Source: National Education Association (NEA), Teacher Salary Benchmark Report 2025. Figures are state averages — your district may pay more or less. Salary lane advancement requirements vary by district.
+      <strong>How the math works.</strong> "Projected difference" is the literal year-1 salary change between your current and target lanes. "Lifetime earnings gain" uses a realistic mid-career model — it takes the midpoint between Starting Master's and Top of Master's in your state (the average salary you'd earn as you progress up the Master's lane) and projects the annual difference over your years remaining in teaching. Your district pay scale may differ from these state averages.<br><br>
+      <strong>Source:</strong> National Education Association (NEA), Teacher Salary Benchmark Report 2025. Salary lane requirements vary by district.
     </div>
-    <div class="warning" id="dataWarning" style="display:none;"></div>
+    <div class="data-warning" id="dataWarning" style="display:none;"></div>
   </div>
 </div>
 
 <script>
-// NEA 2025 data
+// =====================================================================
+// NEA 2025 state salary data (sBA = Starting BA, tBA = Top BA,
+// sMA = Starting MA, tMA = Top MA, top = Top overall)
+// =====================================================================
 const data = {
   "Alabama":      {sBA:44610,tBA:68271,sMA:53441,tMA:78465,top:90667},
   "Alaska":       {sBA:52451,tBA:67738,sMA:57575,tMA:81947,top:93520},
@@ -331,18 +444,24 @@ const data = {
   "West Virginia":{sBA:42708,tBA:63879,sMA:45544,tMA:66740,top:70587},
   "Wisconsin":    {sBA:42259,tBA:null,sMA:null,tMA:null,top:80642},
   "Wyoming":      {sBA:50214,tBA:59780,sMA:54882,tMA:71427,top:78709},
-  // National fallback
   "National Average": {sBA:46526,tBA:66532,sMA:50380,tMA:76905,top:84272}
 };
 
 const laneMap = {startingBA:"sBA", topBA:"tBA", startingMA:"sMA", topMA:"tMA"};
-const laneLabel = {startingBA:"Starting Bachelor's", topBA:"Top of Bachelor's", startingMA:"Starting Master's", topMA:"Top of Master's"};
+const laneLabel = {
+  startingBA:"Starting Bachelor's",
+  topBA:"Top of Bachelor's",
+  startingMA:"Starting Master's",
+  topMA:"Top of Master's"
+};
 
 const PROGRAM_COST = 14790;
 
-const fmt = n => n == null ? "—" : "$" + Math.round(n).toLocaleString();
+// Formatters
+const fmt = n => (n == null || isNaN(n)) ? "—" : (n < 0 ? "−$" : "$") + Math.abs(Math.round(n)).toLocaleString();
 const fmtYears = n => {
-  if (n == null) return "—";
+  if (n == null || isNaN(n) || !isFinite(n)) return "—";
+  if (n < 0) return "—";
   if (n < 1) return Math.round(n*12) + " months";
   return n.toFixed(1) + " years";
 };
@@ -356,7 +475,17 @@ function init() {
     if (s === "California") o.selected = true;
     stateSelect.appendChild(o);
   });
-  ["state","currentLane","targetLane","yearsLeft"].forEach(id => {
+
+  // Auto-default logic: when current changes to Starting MA,
+  // force target to Top of Master's
+  document.getElementById("currentLane").addEventListener("change", function() {
+    if (this.value === "startingMA") {
+      document.getElementById("targetLane").value = "topMA";
+    }
+    calc();
+  });
+
+  ["state","targetLane","yearsLeft"].forEach(id => {
     document.getElementById(id).addEventListener("input", calc);
     document.getElementById(id).addEventListener("change", calc);
   });
@@ -369,39 +498,133 @@ function calc() {
   const targetLane = document.getElementById("targetLane").value;
   const yearsLeft = parseInt(document.getElementById("yearsLeft").value) || 1;
 
-  let stateData = data[state];
+  const stateData = data[state];
+  const fallback = data["National Average"];
   let usingFallback = false;
+  let missingFields = [];
+
+  // Fetch values with fallback
   let currentVal = stateData[laneMap[currentLane]];
   let targetVal = stateData[laneMap[targetLane]];
+  let topMA = stateData.tMA;
 
-  // Fallback to national average if state data missing
-  const fallback = data["National Average"];
-  if (currentVal == null) { currentVal = fallback[laneMap[currentLane]]; usingFallback = true; }
-  if (targetVal == null) { targetVal = fallback[laneMap[targetLane]]; usingFallback = true; }
+  if (currentVal == null) {
+    currentVal = fallback[laneMap[currentLane]];
+    usingFallback = true;
+    missingFields.push(laneLabel[currentLane]);
+  }
+  if (targetVal == null) {
+    targetVal = fallback[laneMap[targetLane]];
+    usingFallback = true;
+    missingFields.push(laneLabel[targetLane]);
+  }
+  if (topMA == null) {
+    topMA = fallback.tMA;
+    usingFallback = true;
+    if (!missingFields.includes("Top of Master's")) missingFields.push("Top of Master's");
+  }
 
-  const annualDiff = targetVal - currentVal;
-  const lifetimeGain = annualDiff * yearsLeft;
-  const payback = annualDiff > 0 ? PROGRAM_COST / annualDiff : null;
-  const costOfWaiting = annualDiff;
+  // ============================================
+  // CORE CALCULATIONS (sanity-checked logic)
+  // ============================================
+  //
+  // Model rationale: a teacher who completes their Master's doesn't
+  // immediately earn Top of Master's salary — they progress up the
+  // Master's pay lane over their career, typically reaching the top
+  // step in 12–15 years. To avoid wildly optimistic projections, we
+  // use the MIDPOINT between Starting MA and Top MA as the effective
+  // "average Master's-lane salary" over a career. This is more honest
+  // than assuming immediate jump to top, and yields lifetime numbers
+  // that hold up under scrutiny.
+  //
+  // ============================================
 
-  document.getElementById("annualRaise").textContent = fmt(annualDiff);
+  const sMA = stateData.sMA != null ? stateData.sMA : fallback.sMA;
+  const avgMA = (sMA + topMA) / 2;
+
+  // 1. Projected (year-1) difference = what changes immediately (literal)
+  //    Can be negative if currentVal > targetVal (e.g., Top BA → Starting MA)
+  const projectedDiff = targetVal - currentVal;
+
+  // 2. Peak earning potential = your ceiling on the Master's lane
+  //    Used for "cost of waiting" — what you forfeit if you delay
+  const peakUplift = topMA - currentVal;
+
+  // 3. Annual lifetime gain = average MA salary − current
+  //    Reflects gradual progression up the Master's lane over a career
+  const annualLifetimeGain = avgMA - currentVal;
+
+  // 4. Lifetime earnings gain = annual lifetime gain × years remaining
+  const lifetimeGain = annualLifetimeGain * yearsLeft;
+
+  // 5. Net Projected ROI = lifetime gain − program cost
+  const netROI = lifetimeGain - PROGRAM_COST;
+
+  // 6. Payback period = program cost ÷ annual lifetime gain
+  //    Only meaningful when annualLifetimeGain > 0
+  const payback = annualLifetimeGain > 0 ? PROGRAM_COST / annualLifetimeGain : null;
+
+  // 7. Cost of waiting 1 year = peak annual uplift forfeited
+  const costOfWaiting = peakUplift > 0 ? peakUplift : null;
+
+  // ============================================
+  // RENDER
+  // ============================================
+
+  // Top metrics
+  document.getElementById("annualRaise").textContent = fmt(projectedDiff);
   document.getElementById("lifetimeGain").textContent = fmt(lifetimeGain);
-  document.getElementById("lifetimeYears").textContent = "over " + yearsLeft + " years";
+  document.getElementById("lifetimeYears").textContent = "over " + yearsLeft + " years (avg lane progression)";
   document.getElementById("payback").textContent = fmtYears(payback);
-  document.getElementById("costOfWaiting").textContent = fmt(costOfWaiting);
+  document.getElementById("costOfWaiting").textContent = costOfWaiting != null ? fmt(costOfWaiting) : "—";
 
+  // Visual treatment for negative projected diff
+  const m1 = document.getElementById("m1");
+  m1.classList.toggle("negative", projectedDiff < 0);
+
+  // Projected ROI section
+  document.getElementById("roiGain").textContent = fmt(lifetimeGain);
+  const roiNetEl = document.getElementById("roiNet");
+  roiNetEl.textContent = fmt(netROI);
+  roiNetEl.classList.toggle("negative", netROI < 0);
+  document.getElementById("roiContext").textContent =
+    "Projected over " + yearsLeft + " years of remaining teaching, based on the average Master's-lane salary in " + state + " ($" + Math.round(avgMA).toLocaleString() + "). Assumes typical lane progression from Starting to Top of Master's over your career.";
+
+  // Breakdown
   document.getElementById("stateLabel").textContent = state;
-  document.getElementById("currentSalary").textContent = fmt(currentVal) + " (" + laneLabel[currentLane] + ")";
-  document.getElementById("targetSalary").textContent = fmt(targetVal) + " (" + laneLabel[targetLane] + ")";
-  document.getElementById("annualDiff").textContent = fmt(annualDiff) + " / year";
+  document.getElementById("currentSalary").textContent = fmt(currentVal) + "  (" + laneLabel[currentLane] + ")";
+  document.getElementById("targetSalary").textContent = fmt(targetVal) + "  (" + laneLabel[targetLane] + ")";
+  document.getElementById("topMASalary").textContent = fmt(topMA);
+  document.getElementById("annualDiff").textContent = fmt(projectedDiff) + " / year";
   document.getElementById("yearsLabel").textContent = yearsLeft + " years";
 
-  const warning = document.getElementById("dataWarning");
-  if (usingFallback) {
+  // Negative-difference explainer
+  const warning = document.getElementById("negativeWarning");
+  if (projectedDiff < 0) {
     warning.style.display = "block";
-    warning.textContent = "Note: " + state + " doesn't publish complete NEA data for one or both of these lanes. National averages are used where state figures are missing.";
+    warning.innerHTML =
+      "<strong>About that year-1 number:</strong> Your projected difference is negative because in " + state +
+      ", the " + laneLabel[currentLane] + " salary ($" + currentVal.toLocaleString() +
+      ") is currently higher than the " + laneLabel[targetLane] + " salary ($" + targetVal.toLocaleString() +
+      "). This is normal for experienced teachers — you've accumulated step increases on the Bachelor's lane. " +
+      "The full picture: once you advance up the Master's lane, your earning ceiling rises to $" + topMA.toLocaleString() +
+      " (Top of Master's) — that's <strong>+" + fmt(peakUplift).replace("$","") +
+      " per year above where you are now</strong>. " +
+      "That's what the lifetime earnings gain and projected ROI below reflect.";
   } else {
     warning.style.display = "none";
+  }
+
+  // Data fallback warning
+  const dataWarning = document.getElementById("dataWarning");
+  if (usingFallback) {
+    dataWarning.style.display = "block";
+    dataWarning.innerHTML =
+      "<strong>Note:</strong> " + state + " doesn't publish complete NEA data for " +
+      missingFields.join(" / ") + ". National averages are used where state figures are missing. " +
+      "Your district pay scale will be the most accurate reference.";
+  } else {
+    dataWarning.style.display = "none";
   }
 }
 
