@@ -380,7 +380,7 @@
     </div>
 
     <div class="footnote">
-      <strong>How the math works.</strong> "Projected difference" is the literal year-1 salary change between your current and target lanes. "Lifetime earnings gain" uses a realistic mid-career model — it takes the midpoint between Starting Master's and Top of Master's in your state (the average salary you'd earn as you progress up the Master's lane) and projects the annual difference over your years remaining in teaching. Your district pay scale may differ from these state averages.<br><br>
+      <strong>How the math works.</strong> "Projected difference" is the literal year-1 salary change between your current and target lanes. "Lifetime earnings gain" projects your career earning ceiling — Top of Master's in your state — across your remaining years in teaching, showing the cumulative gain over your current salary if you reach the top of the Master's pay lane. Your district pay scale and time-to-top will vary; treat these numbers as a directional guide, not a guarantee.<br><br>
       <strong>Source:</strong> National Education Association (NEA), Teacher Salary Benchmark Report 2025. Salary lane requirements vary by district.
     </div>
     <div class="data-warning" id="dataWarning" style="display:none;"></div>
@@ -525,46 +525,40 @@ function calc() {
   }
 
   // ============================================
-  // CORE CALCULATIONS (sanity-checked logic)
+  // CORE CALCULATIONS (peak ceiling model)
   // ============================================
   //
-  // Model rationale: a teacher who completes their Master's doesn't
-  // immediately earn Top of Master's salary — they progress up the
-  // Master's pay lane over their career, typically reaching the top
-  // step in 12–15 years. To avoid wildly optimistic projections, we
-  // use the MIDPOINT between Starting MA and Top MA as the effective
-  // "average Master's-lane salary" over a career. This is more honest
-  // than assuming immediate jump to top, and yields lifetime numbers
-  // that hold up under scrutiny.
+  // Model rationale: this projects what's possible at the peak of the
+  // Master's pay lane — Top of Master's in the user's state — for
+  // their remaining years in teaching. It frames the calculator as
+  // "career earning ceiling potential," which is the most common
+  // ROI framing for educational programs. Assumption: the teacher
+  // eventually reaches Top of Master's and earns at that level for
+  // their remaining career. The footnote makes this assumption clear.
   //
   // ============================================
-
-  const sMA = stateData.sMA != null ? stateData.sMA : fallback.sMA;
-  const avgMA = (sMA + topMA) / 2;
 
   // 1. Projected (year-1) difference = what changes immediately (literal)
-  //    Can be negative if currentVal > targetVal (e.g., Top BA → Starting MA)
+  //    Reflects the user's selected target pay lane
   const projectedDiff = targetVal - currentVal;
 
-  // 2. Peak earning potential = your ceiling on the Master's lane
-  //    Used for "cost of waiting" — what you forfeit if you delay
+  // 2. Peak earning potential (annual) = Top of Master's − current
+  //    Your career earning ceiling delta on the Master's lane
   const peakUplift = topMA - currentVal;
 
-  // 3. Annual lifetime gain = average MA salary − current
-  //    Reflects gradual progression up the Master's lane over a career
-  const annualLifetimeGain = avgMA - currentVal;
+  // 3. Lifetime earnings gain = peak uplift × years remaining
+  //    "If you reach Top of Master's, here's your cumulative gain
+  //    over your remaining career"
+  const lifetimeGain = peakUplift * yearsLeft;
 
-  // 4. Lifetime earnings gain = annual lifetime gain × years remaining
-  const lifetimeGain = annualLifetimeGain * yearsLeft;
-
-  // 5. Net Projected ROI = lifetime gain − program cost
+  // 4. Net Projected ROI = lifetime gain − program cost
   const netROI = lifetimeGain - PROGRAM_COST;
 
-  // 6. Payback period = program cost ÷ annual lifetime gain
-  //    Only meaningful when annualLifetimeGain > 0
-  const payback = annualLifetimeGain > 0 ? PROGRAM_COST / annualLifetimeGain : null;
+  // 5. Payback period = program cost ÷ peak annual uplift
+  //    Only meaningful when peakUplift > 0
+  const payback = peakUplift > 0 ? PROGRAM_COST / peakUplift : null;
 
-  // 7. Cost of waiting 1 year = peak annual uplift forfeited
+  // 6. Cost of waiting 1 year = one year of peak uplift forfeited
   const costOfWaiting = peakUplift > 0 ? peakUplift : null;
 
   // ============================================
@@ -574,7 +568,7 @@ function calc() {
   // Top metrics
   document.getElementById("annualRaise").textContent = fmt(projectedDiff);
   document.getElementById("lifetimeGain").textContent = fmt(lifetimeGain);
-  document.getElementById("lifetimeYears").textContent = "over " + yearsLeft + " years (avg lane progression)";
+  document.getElementById("lifetimeYears").textContent = "over " + yearsLeft + " years at Top of Master's";
   document.getElementById("payback").textContent = fmtYears(payback);
   document.getElementById("costOfWaiting").textContent = costOfWaiting != null ? fmt(costOfWaiting) : "—";
 
@@ -588,7 +582,7 @@ function calc() {
   roiNetEl.textContent = fmt(netROI);
   roiNetEl.classList.toggle("negative", netROI < 0);
   document.getElementById("roiContext").textContent =
-    "Projected over " + yearsLeft + " years of remaining teaching, based on the average Master's-lane salary in " + state + " ($" + Math.round(avgMA).toLocaleString() + "). Assumes typical lane progression from Starting to Top of Master's over your career.";
+    "Projected over " + yearsLeft + " years of remaining teaching, based on reaching Top of Master's salary in " + state + " ($" + topMA.toLocaleString() + ").";
 
   // Breakdown
   document.getElementById("stateLabel").textContent = state;
