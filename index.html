@@ -344,12 +344,10 @@
           <option value="startingMA">Starting Master's</option>
         </select>
       </div>
-      <div>
-        <label for="targetLane">Target pay lane</label>
-        <select id="targetLane">
-          <option value="startingMA">Starting Master's</option>
-          <option value="topMA" selected>Top of Master's</option>
-        </select>
+      <div id="annualBumpWrap" style="display:none;">
+        <label for="annualBump">Annual raise from program ($)</label>
+        <input type="number" id="annualBump" min="0" max="20000" step="500" value="2000">
+        <div style="font-size:11px;color:var(--b4c-gray);margin-top:6px;line-height:1.4;">Estimated MA+30 / credit-credential bump. Varies by district — ask your EDC.</div>
       </div>
       <div>
         <label for="yearsLeft">Years left in teaching</label>
@@ -456,7 +454,11 @@
     </div>
 
     <div class="footnote">
-      <strong>How the math works.</strong> "Projected difference" is the literal year-1 salary change between your current and target lanes. "Lifetime earnings gain" models a realistic teacher pay trajectory: linear progression from Starting Master's to Top of Master's over ~12 years (typical district step schedule), then steady at Top of Master's for any remaining years. The cumulative MA-lane earnings are compared to staying at your current Bachelor's-lane salary. Your district pay scale and time-to-top will vary — treat these as a directional guide, not a guarantee.<br><br>
+      <strong>How the math works.</strong> The calculator uses the actual MA-lane premium — the annual bump the Master's pay lane pays over the Bachelor's lane at the same experience step. Source: NEA 2025 state averages.<br><br>
+      <strong>Starting Bachelor's:</strong> Your year-1 bump is the Starting Diff (sMA − sBA). As you accumulate experience, your bump grows to the Top Diff (tMA − tBA) by ~year 12, then stays there. Lifetime gain is the trapezoidal area under that curve.<br><br>
+      <strong>Top of Bachelor's:</strong> You switch to the MA lane at your current experience step, receiving the Top Diff (tMA − tBA) every remaining year.<br><br>
+      <strong>Starting Master's:</strong> The MSEd unlocks an MA+30 / additional-credential lane. We use the annual bump you entered × your remaining years. (Normal step progression up the MA lane would happen via experience regardless.)<br><br>
+      Your district pay scale and lane-crossing rules will vary — treat as a directional guide.<br><br>
       <strong>Source:</strong> National Education Association (NEA), Teacher Salary Benchmark Report 2025. Salary lane requirements vary by district.
     </div>
     <div class="data-warning" id="dataWarning" style="display:none;"></div>
@@ -552,16 +554,14 @@ function init() {
     stateSelect.appendChild(o);
   });
 
-  // Auto-default logic: when current changes to Starting MA,
-  // force target to Top of Master's
+  // When current changes to Starting MA, show the annual bump input
   document.getElementById("currentLane").addEventListener("change", function() {
-    if (this.value === "startingMA") {
-      document.getElementById("targetLane").value = "topMA";
-    }
+    const isStartingMA = this.value === "startingMA";
+    document.getElementById("annualBumpWrap").style.display = isStartingMA ? "block" : "none";
     calc();
   });
 
-  ["state","targetLane","yearsLeft"].forEach(id => {
+  ["state","yearsLeft","annualBump"].forEach(id => {
     document.getElementById(id).addEventListener("input", calc);
     document.getElementById(id).addEventListener("change", calc);
   });
@@ -571,7 +571,6 @@ function init() {
 function calc() {
   const state = document.getElementById("state").value;
   const currentLane = document.getElementById("currentLane").value;
-  const targetLane = document.getElementById("targetLane").value;
   const yearsLeft = parseInt(document.getElementById("yearsLeft").value) || 1;
 
   const stateData = data[state];
@@ -579,26 +578,47 @@ function calc() {
   let usingFallback = false;
   let missingFields = [];
 
-  // Fetch values with fallback
-  let currentVal = stateData[laneMap[currentLane]];
-  let targetVal = stateData[laneMap[targetLane]];
-  let topMA = stateData.tMA;
+  // Fetch values with fallback to national averages
+  function getOrFallback(key) {
+    if (stateData[key] != null) return stateData[key];
+    usingFallback = true;
+    return fallback[key];
+  }
 
-  if (currentVal == null) {
-    currentVal = fallback[laneMap[currentLane]];
+  // ============================================
+  // LANE PREMIUM (the actual annual bump from the MSEd)
+  // ============================================
+  // Compute the state's lane premium from state-level data when both
+  // sides of the lane (BA and MA) are reported. When data is missing,
+  // fall back to national lane diffs — NOT a mix of state and national
+  // values, which would garble the premium.
+  // ============================================
+  const NAT_STARTING_DIFF = fallback.sMA - fallback.sBA;  // $3,854
+  const NAT_TOP_DIFF      = fallback.tMA - fallback.tBA;  // $10,373
+
+  let startingDiff, topDiff;
+  if (stateData.sBA != null && stateData.sMA != null) {
+    startingDiff = stateData.sMA - stateData.sBA;
+  } else {
+    startingDiff = NAT_STARTING_DIFF;
     usingFallback = true;
-    missingFields.push(laneLabel[currentLane]);
+    missingFields.push("starting-lane diff");
   }
-  if (targetVal == null) {
-    targetVal = fallback[laneMap[targetLane]];
+  if (stateData.tBA != null && stateData.tMA != null) {
+    topDiff = stateData.tMA - stateData.tBA;
+  } else {
+    topDiff = NAT_TOP_DIFF;
     usingFallback = true;
-    missingFields.push(laneLabel[targetLane]);
+    missingFields.push("top-lane diff");
   }
-  if (topMA == null) {
-    topMA = fallback.tMA;
-    usingFallback = true;
-    if (!missingFields.includes("Top of Master's")) missingFields.push("Top of Master's");
-  }
+
+  // Resolve display values (state-preferred, national fallback)
+  const sBA = stateData.sBA != null ? stateData.sBA : fallback.sBA;
+  const tBA = stateData.tBA != null ? stateData.tBA : fallback.tBA;
+  const sMA = stateData.sMA != null ? stateData.sMA : fallback.sMA;
+  const topMA = stateData.tMA != null ? stateData.tMA : fallback.tMA;
+  let currentVal = stateData[laneMap[currentLane]];
+  if (currentVal == null) currentVal = fallback[laneMap[currentLane]];
 
   // ============================================
   // CORE CALCULATIONS (trapezoidal progression model)
@@ -614,42 +634,71 @@ function calc() {
   //
   // ============================================
 
-  const sMA = stateData.sMA != null ? stateData.sMA : fallback.sMA;
   const YEARS_TO_TOP = 12; // typical district step schedule
+  const isStartingMA = currentLane === "startingMA";
 
-  // 1. Projected (year-1) difference = what changes immediately (literal)
-  const projectedDiff = targetVal - currentVal;
+  let projectedDiff, peakUplift, lifetimeGain, annualLifetimeGain;
 
-  // 2. Peak earning potential (annual) = Top of Master's − current
-  const peakUplift = topMA - currentVal;
-
-  // 3. Lifetime earnings gain — trapezoidal:
-  //    Years 1 to min(yearsLeft, 12): linear progression sMA → topMA
-  //      → average over that period = (sMA + topMA)/2 = avgMA
-  //    Years 12+ (if any): flat at topMA
-  let maEarnings;
-  if (yearsLeft >= YEARS_TO_TOP) {
-    const avgMA = (sMA + topMA) / 2;
-    maEarnings = (YEARS_TO_TOP * avgMA) + ((yearsLeft - YEARS_TO_TOP) * topMA);
+  if (isStartingMA) {
+    // ============================================
+    // CREDENTIAL BUMP MODEL (already-MA teachers)
+    // ============================================
+    // For teachers who already hold a master's, the MSEd typically
+    // unlocks an MA+30 / additional credential lane that pays an
+    // annual bump on top of normal experience-based step increases.
+    // The lane progression to Top MA would happen anyway via
+    // experience, so we shouldn't count that as program-driven gain.
+    // We only count the marginal credential bump.
+    // ============================================
+    const annualBump = parseFloat(document.getElementById("annualBump").value) || 0;
+    projectedDiff = annualBump;
+    peakUplift = topMA - currentVal; // shown for context (career ceiling)
+    annualLifetimeGain = annualBump;
+    lifetimeGain = annualBump * yearsLeft;
+  } else if (currentLane === "topBA") {
+    // ============================================
+    // SENIOR BA → MA (Top BA users)
+    // ============================================
+    // Senior BA teachers switch to MA lane at their current step,
+    // receiving the Top Diff bump (Top MA − Top BA) for every
+    // remaining year. They keep their experience credit when crossing.
+    // ============================================
+    projectedDiff = topDiff;
+    peakUplift = topDiff;
+    annualLifetimeGain = topDiff;
+    lifetimeGain = topDiff * yearsLeft;
   } else {
-    // Doesn't reach top before retirement — partial progression
-    const fractionReached = yearsLeft / YEARS_TO_TOP;
-    const peakReached = sMA + (topMA - sMA) * fractionReached;
-    const partialAvg = (sMA + peakReached) / 2;
-    maEarnings = yearsLeft * partialAvg;
-  }
-  const baEarnings = yearsLeft * currentVal;
-  const lifetimeGain = maEarnings - baEarnings;
-  const annualLifetimeGain = lifetimeGain / yearsLeft;
+    // ============================================
+    // NEW BA → MA (Starting BA users)
+    // ============================================
+    // New teachers start at Starting MA (bump = Starting Diff in year 1)
+    // and progress up to Top MA over ~12 years. Their lane premium
+    // grows linearly from Starting Diff to Top Diff, then stays at
+    // Top Diff for any remaining years. This is the trapezoidal area
+    // under the lane-premium curve.
+    // ============================================
+    projectedDiff = startingDiff;
+    peakUplift = topDiff;
 
-  // 4. Net Projected ROI = lifetime gain − program cost
+    if (yearsLeft >= YEARS_TO_TOP) {
+      const avgPremium = (startingDiff + topDiff) / 2;
+      lifetimeGain = (YEARS_TO_TOP * avgPremium) + ((yearsLeft - YEARS_TO_TOP) * topDiff);
+    } else {
+      const fractionReached = yearsLeft / YEARS_TO_TOP;
+      const premiumReached = startingDiff + (topDiff - startingDiff) * fractionReached;
+      lifetimeGain = yearsLeft * (startingDiff + premiumReached) / 2;
+    }
+    annualLifetimeGain = lifetimeGain / yearsLeft;
+  }
+
+  // Net Projected ROI = lifetime gain − program cost
   const netROI = lifetimeGain - PROGRAM_COST;
 
-  // 5. Payback period = program cost ÷ average annual gain
+  // Payback period
   const payback = annualLifetimeGain > 0 ? PROGRAM_COST / annualLifetimeGain : null;
 
-  // 6. Cost of waiting 1 year = one year of peak uplift forfeited
-  const costOfWaiting = peakUplift > 0 ? peakUplift : null;
+  // Cost of waiting 1 year = one year of annual gain forfeited
+  const costOfWaiting = annualLifetimeGain > 0 ? annualLifetimeGain : null;
 
   // ============================================
   // RENDER
@@ -658,7 +707,9 @@ function calc() {
   // Top metrics
   document.getElementById("annualRaise").textContent = fmt(projectedDiff);
   document.getElementById("lifetimeGain").textContent = fmt(lifetimeGain);
-  document.getElementById("lifetimeYears").textContent = "over " + yearsLeft + " years (modeled lane progression)";
+  document.getElementById("lifetimeYears").textContent = isStartingMA
+    ? "over " + yearsLeft + " years (credential bump model)"
+    : "over " + yearsLeft + " years (modeled lane progression)";
   document.getElementById("payback").textContent = fmtYears(payback);
   document.getElementById("costOfWaiting").textContent = costOfWaiting != null ? fmt(costOfWaiting) : "—";
 
@@ -686,14 +737,29 @@ function calc() {
     const roiNetEl = document.getElementById("roiNet");
     roiNetEl.textContent = fmt(netROI);
     roiNetEl.classList.toggle("negative", netROI < 0);
-    document.getElementById("roiContext").textContent =
-      "Modeled over " + yearsLeft + " years, assuming typical lane progression: ~12 years to reach Top of Master's ($" + topMA.toLocaleString() + " in " + state + "), then steady at that ceiling.";
+    if (isStartingMA) {
+      const annualBump = parseFloat(document.getElementById("annualBump").value) || 0;
+      document.getElementById("roiContext").textContent =
+        "Based on a $" + annualBump.toLocaleString() + "/year credential bump (MA+30 or similar) over " + yearsLeft + " years. Adjust the bump above to match your district's actual MA+credential lane.";
+    } else if (currentLane === "topBA") {
+      document.getElementById("roiContext").textContent =
+        "Based on the $" + Math.round(topDiff).toLocaleString() + "/year lane premium (Top of Master's − Top of Bachelor's in " + state + ") over " + yearsLeft + " years.";
+    } else {
+      document.getElementById("roiContext").textContent =
+        "Based on the MA-lane premium in " + state + ": $" + Math.round(startingDiff).toLocaleString() + "/yr at start, rising to $" + Math.round(topDiff).toLocaleString() + "/yr by year ~12, over " + yearsLeft + " years total.";
+    }
   }
 
   // Breakdown
   document.getElementById("stateLabel").textContent = state;
   document.getElementById("currentSalary").textContent = fmt(currentVal) + "  (" + laneLabel[currentLane] + ")";
-  document.getElementById("targetSalary").textContent = fmt(targetVal) + "  (" + laneLabel[targetLane] + ")";
+  if (isStartingMA) {
+    document.getElementById("targetSalary").textContent = "Credential bump model — see note below";
+  } else if (currentLane === "topBA") {
+    document.getElementById("targetSalary").textContent = fmt(topMA) + "  (Top of Master's — same step)";
+  } else {
+    document.getElementById("targetSalary").textContent = fmt(sMA) + " → " + fmt(topMA) + "  (progresses up MA lane)";
+  }
   document.getElementById("topMASalary").textContent = fmt(topMA);
   document.getElementById("annualDiff").textContent = fmt(projectedDiff) + " / year";
   document.getElementById("yearsLabel").textContent = yearsLeft + " years";
