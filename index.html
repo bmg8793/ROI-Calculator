@@ -218,6 +218,46 @@
     text-align: center;
   }
 
+  /* Beyond-salary fallback section */
+  .roi-section.beyond {
+    border-top: 4px solid var(--b4c-coral);
+  }
+  .beyond-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .beyond-item {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 14px;
+    background: var(--b4c-ivory);
+    border-radius: 8px;
+  }
+  .beyond-icon {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .beyond-title {
+    font-weight: 700;
+    color: var(--b4c-indigo);
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  .beyond-text {
+    font-size: 13px;
+    color: var(--b4c-deep);
+    line-height: 1.5;
+  }
+
   /* Breakdown */
   .breakdown {
     background: white;
@@ -346,7 +386,7 @@
 
   <div class="warning" id="negativeWarning" style="display:none;"></div>
 
-  <div class="roi-section">
+  <div class="roi-section" id="roiSectionPositive">
     <h2>Your projected ROI</h2>
     <div class="roi-rows">
       <div class="roi-row">
@@ -365,6 +405,42 @@
     <div class="roi-context" id="roiContext">—</div>
   </div>
 
+  <div class="roi-section beyond" id="roiSectionMarginal" style="display:none;">
+    <h2>Beyond the salary math</h2>
+    <p id="marginalIntro" style="margin:0 0 16px;font-size:15px;color:var(--b4c-deep);line-height:1.6;"></p>
+    <div class="beyond-grid">
+      <div class="beyond-item">
+        <div class="beyond-icon" style="background:var(--b4c-jade-tint);color:var(--b4c-jade);">+</div>
+        <div>
+          <div class="beyond-title">Lane-change credential</div>
+          <div class="beyond-text">Districts increasingly require advanced credentials for instructional coach, dean, or AP roles — your MSEd unlocks those tracks.</div>
+        </div>
+      </div>
+      <div class="beyond-item">
+        <div class="beyond-icon" style="background:var(--b4c-coral-tint);color:var(--b4c-coral);">$</div>
+        <div>
+          <div class="beyond-title">District reimbursement</div>
+          <div class="beyond-text">Many districts offset 50–100% of tuition via Title II, Section 127, or tuition reimbursement programs. Ask your principal — it changes the math entirely.</div>
+        </div>
+      </div>
+      <div class="beyond-item">
+        <div class="beyond-icon" style="background:var(--b4c-azure-tint);color:var(--b4c-azure);">★</div>
+        <div>
+          <div class="beyond-title">SEL & trauma-informed skills</div>
+          <div class="beyond-text">Embedded coursework you apply in the classroom week one — directly addressing the student behavior and engagement challenges most teachers cite.</div>
+        </div>
+      </div>
+      <div class="beyond-item">
+        <div class="beyond-icon" style="background:var(--b4c-peach-tint);color:#b8830d;">⏱</div>
+        <div>
+          <div class="beyond-title">Retention bonuses & step credit</div>
+          <div class="beyond-text">Many districts offer retention incentives, step-credit fast-tracks, or career-ladder bonuses for educators with master's-level credentials.</div>
+        </div>
+      </div>
+    </div>
+    <div class="roi-context" style="margin-top:20px;">Talk to your EDC about the full value picture — including what your specific district offers.</div>
+  </div>
+
   <div class="breakdown">
     <h2>How we got there</h2>
     <div class="row"><span class="label">Your state</span><span class="value" id="stateLabel">—</span></div>
@@ -380,7 +456,7 @@
     </div>
 
     <div class="footnote">
-      <strong>How the math works.</strong> "Projected difference" is the literal year-1 salary change between your current and target lanes. "Lifetime earnings gain" projects your career earning ceiling — Top of Master's in your state — across your remaining years in teaching, showing the cumulative gain over your current salary if you reach the top of the Master's pay lane. Your district pay scale and time-to-top will vary; treat these numbers as a directional guide, not a guarantee.<br><br>
+      <strong>How the math works.</strong> "Projected difference" is the literal year-1 salary change between your current and target lanes. "Lifetime earnings gain" models a realistic teacher pay trajectory: linear progression from Starting Master's to Top of Master's over ~12 years (typical district step schedule), then steady at Top of Master's for any remaining years. The cumulative MA-lane earnings are compared to staying at your current Bachelor's-lane salary. Your district pay scale and time-to-top will vary — treat these as a directional guide, not a guarantee.<br><br>
       <strong>Source:</strong> National Education Association (NEA), Teacher Salary Benchmark Report 2025. Salary lane requirements vary by district.
     </div>
     <div class="data-warning" id="dataWarning" style="display:none;"></div>
@@ -525,38 +601,52 @@ function calc() {
   }
 
   // ============================================
-  // CORE CALCULATIONS (peak ceiling model)
+  // CORE CALCULATIONS (trapezoidal progression model)
   // ============================================
   //
-  // Model rationale: this projects what's possible at the peak of the
-  // Master's pay lane — Top of Master's in the user's state — for
-  // their remaining years in teaching. It frames the calculator as
-  // "career earning ceiling potential," which is the most common
-  // ROI framing for educational programs. Assumption: the teacher
-  // eventually reaches Top of Master's and earns at that level for
-  // their remaining career. The footnote makes this assumption clear.
+  // Model rationale: a teacher who completes the MSEd progresses up
+  // the Master's pay lane in roughly 12 years (typical district
+  // scale), then earns at Top of Master's for the remainder of their
+  // career. We model this as a trapezoid: linear progression from
+  // Starting MA to Top MA over 12 years, then flat at Top MA. This
+  // gives realistic lifetime numbers without the false precision of
+  // assuming immediate jump to top.
   //
   // ============================================
 
+  const sMA = stateData.sMA != null ? stateData.sMA : fallback.sMA;
+  const YEARS_TO_TOP = 12; // typical district step schedule
+
   // 1. Projected (year-1) difference = what changes immediately (literal)
-  //    Reflects the user's selected target pay lane
   const projectedDiff = targetVal - currentVal;
 
   // 2. Peak earning potential (annual) = Top of Master's − current
-  //    Your career earning ceiling delta on the Master's lane
   const peakUplift = topMA - currentVal;
 
-  // 3. Lifetime earnings gain = peak uplift × years remaining
-  //    "If you reach Top of Master's, here's your cumulative gain
-  //    over your remaining career"
-  const lifetimeGain = peakUplift * yearsLeft;
+  // 3. Lifetime earnings gain — trapezoidal:
+  //    Years 1 to min(yearsLeft, 12): linear progression sMA → topMA
+  //      → average over that period = (sMA + topMA)/2 = avgMA
+  //    Years 12+ (if any): flat at topMA
+  let maEarnings;
+  if (yearsLeft >= YEARS_TO_TOP) {
+    const avgMA = (sMA + topMA) / 2;
+    maEarnings = (YEARS_TO_TOP * avgMA) + ((yearsLeft - YEARS_TO_TOP) * topMA);
+  } else {
+    // Doesn't reach top before retirement — partial progression
+    const fractionReached = yearsLeft / YEARS_TO_TOP;
+    const peakReached = sMA + (topMA - sMA) * fractionReached;
+    const partialAvg = (sMA + peakReached) / 2;
+    maEarnings = yearsLeft * partialAvg;
+  }
+  const baEarnings = yearsLeft * currentVal;
+  const lifetimeGain = maEarnings - baEarnings;
+  const annualLifetimeGain = lifetimeGain / yearsLeft;
 
   // 4. Net Projected ROI = lifetime gain − program cost
   const netROI = lifetimeGain - PROGRAM_COST;
 
-  // 5. Payback period = program cost ÷ peak annual uplift
-  //    Only meaningful when peakUplift > 0
-  const payback = peakUplift > 0 ? PROGRAM_COST / peakUplift : null;
+  // 5. Payback period = program cost ÷ average annual gain
+  const payback = annualLifetimeGain > 0 ? PROGRAM_COST / annualLifetimeGain : null;
 
   // 6. Cost of waiting 1 year = one year of peak uplift forfeited
   const costOfWaiting = peakUplift > 0 ? peakUplift : null;
@@ -568,7 +658,7 @@ function calc() {
   // Top metrics
   document.getElementById("annualRaise").textContent = fmt(projectedDiff);
   document.getElementById("lifetimeGain").textContent = fmt(lifetimeGain);
-  document.getElementById("lifetimeYears").textContent = "over " + yearsLeft + " years at Top of Master's";
+  document.getElementById("lifetimeYears").textContent = "over " + yearsLeft + " years (modeled lane progression)";
   document.getElementById("payback").textContent = fmtYears(payback);
   document.getElementById("costOfWaiting").textContent = costOfWaiting != null ? fmt(costOfWaiting) : "—";
 
@@ -576,13 +666,29 @@ function calc() {
   const m1 = document.getElementById("m1");
   m1.classList.toggle("negative", projectedDiff < 0);
 
-  // Projected ROI section
-  document.getElementById("roiGain").textContent = fmt(lifetimeGain);
-  const roiNetEl = document.getElementById("roiNet");
-  roiNetEl.textContent = fmt(netROI);
-  roiNetEl.classList.toggle("negative", netROI < 0);
-  document.getElementById("roiContext").textContent =
-    "Projected over " + yearsLeft + " years of remaining teaching, based on reaching Top of Master's salary in " + state + " ($" + topMA.toLocaleString() + ").";
+  // Projected ROI section — swap between positive ROI breakdown and
+  // "beyond salary" fallback when the financial case is marginal
+  const positiveEl = document.getElementById("roiSectionPositive");
+  const marginalEl = document.getElementById("roiSectionMarginal");
+
+  if (netROI < 0) {
+    // Show "Beyond the salary math" fallback
+    positiveEl.style.display = "none";
+    marginalEl.style.display = "block";
+    document.getElementById("marginalIntro").textContent =
+      "In " + state + ", with " + yearsLeft + " years of teaching left from the " + laneLabel[currentLane] +
+      " pay lane, the salary math alone is marginal. That's a real finding — and it's where the conversation gets richer. " +
+      "The MSEd's value extends well beyond the pay scale:";
+  } else {
+    positiveEl.style.display = "block";
+    marginalEl.style.display = "none";
+    document.getElementById("roiGain").textContent = fmt(lifetimeGain);
+    const roiNetEl = document.getElementById("roiNet");
+    roiNetEl.textContent = fmt(netROI);
+    roiNetEl.classList.toggle("negative", netROI < 0);
+    document.getElementById("roiContext").textContent =
+      "Modeled over " + yearsLeft + " years, assuming typical lane progression: ~12 years to reach Top of Master's ($" + topMA.toLocaleString() + " in " + state + "), then steady at that ceiling.";
+  }
 
   // Breakdown
   document.getElementById("stateLabel").textContent = state;
